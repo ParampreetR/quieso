@@ -13,8 +13,17 @@
 
 #include "src/quieso.h"
 #include "src/arg_parse.h"
+#include "src/networking.h"
 
 #define MAX_THREADS 500 /* Total Threads */
+
+
+int ping_host() {
+
+}
+
+
+
 
 
 /*
@@ -158,11 +167,33 @@ int main(int argc, char *argv[])
 
 	// Clear out space
 	bzero(user_args->host, sizeof(user_args->host));
+
 	// Copy to struct with typecasting
 	strcpy(user_args->host , inet_ntoa(*( (struct in_addr *)target->h_addr_list[0] )));
-	printf("Scanning %s\n", user_args->host);
 
+	fprintf(stderr, "\x1b[33m\
+           /\\\n\
+          /  \\\n\
+         /    \\\n\
+        /   o  \\\n\
+       /        \\\n\
+      / O        \\\n\
+     /      o     \\\n\
+    /           0  \\\n\
+   /    O           \\\n\
+  /__________________\\\n\
+\x1b[0m");
 
+	fprintf(stderr, "Starting Quieso v0.1\n");
+	// If user had not given any timeout
+	if(user_args->timeout == 0) {
+		fprintf(stderr, "Detecting Timeout....\n");
+		// Ping host to get response time to set timeout + 1.5 sec
+		user_args->timeout = ping(user_args->host) + 1500;
+	}
+
+	fprintf(stderr, "Set Timeout to: %d\n", user_args->timeout);
+	fprintf(stderr, "Starting Connect scan on %s\n", user_args->host);
 
 	// Create threads that will not do anything until we set opts[thread_id].start = 1
 	for(thread_id = 0; thread_id < MAX_THREADS; thread_id++) {
@@ -183,7 +214,7 @@ int main(int argc, char *argv[])
 	}
 
 	thread_id = 0;	
-	printf("--> Created %d threads.\n", MAX_THREADS);
+	fprintf(stderr, "--> Created %d threads.\n", MAX_THREADS);
 
 	// Loop till over all ports are scanned
 	while(port_scan < 65535) {
@@ -196,6 +227,13 @@ int main(int argc, char *argv[])
 			}
 		}
 	}
+
+	fprintf(stderr, "Scan completed. Shutting down threads.\n");
+
+	for(int i = 0; i < MAX_THREADS; i++) {
+			opts[i].end = 1;		/* Tell threads they can exit now */
+	}
+
 	/* 
 	 * We can use any other approach to ensure all threads are exited but
 	 * in our case we are sure that no thread can run more than user_args->timeout + 1.
