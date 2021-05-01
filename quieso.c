@@ -32,7 +32,7 @@ int ping_host() {
  * part of this function is we are setting socket on non blocking and waiting if we got a 
  * permission to write on socket.
  */
-int scanner(const char * host, unsigned int *port, unsigned int timeout, unsigned int *start, unsigned int *end)
+int scanner(const char * host, unsigned int *port, float timeout, unsigned int *start, unsigned int *end)
 {
 	// This struct has all information which is required to connect to target
 	struct sockaddr_in address, bind_addr;
@@ -65,7 +65,7 @@ int scanner(const char * host, unsigned int *port, unsigned int timeout, unsigne
 		// Seconds to timeout
 		tv.tv_sec = timeout;
 		// Microseconds to timeout
-		tv.tv_usec = 0;
+		tv.tv_usec = timeout - (int)timeout;
 
 		FD_ZERO(&write_fds);
 
@@ -110,7 +110,8 @@ int scanner(const char * host, unsigned int *port, unsigned int timeout, unsigne
 			if(getsockopt(sd, SOL_SOCKET, SO_ERROR, &so_error, &so_error_len) != -1) {
 				if(so_error == 0) {
 					clock_t connected_time = clock();
-					printf("%ldms\t%d OPEN\n", ((connected_time - init_time) * 1000) / CLOCKS_PER_SEC, *port);
+					if((((connected_time - init_time) * 1000) / CLOCKS_PER_SEC) > 10)
+						printf("%ldms\t%d OPEN\n", ((connected_time - init_time) * 1000) / CLOCKS_PER_SEC, *port);
 				}
 
 			}
@@ -189,10 +190,10 @@ int main(int argc, char *argv[])
 	if(user_args->timeout == 0) {
 		fprintf(stderr, "Detecting Timeout....\n");
 		// Ping host to get response time to set timeout + 1.5 sec
-		user_args->timeout = ping(user_args->host) + 1500;
+		user_args->timeout = (ping(user_args->host) + 1500) / 1000;
 	}
 
-	fprintf(stderr, "Set Timeout to: %d\n", user_args->timeout);
+	fprintf(stderr, "Set Timeout to: %f\n", user_args->timeout);
 	fprintf(stderr, "Starting Connect scan on %s\n", user_args->host);
 
 	// Create threads that will not do anything until we set opts[thread_id].start = 1
@@ -229,11 +230,11 @@ int main(int argc, char *argv[])
 	}
 
 	fprintf(stderr, "Scan completed. Shutting down threads.\n");
-
+/*
 	for(int i = 0; i < MAX_THREADS; i++) {
-			opts[i].end = 1;		/* Tell threads they can exit now */
+			opts[i].end = 1;		/* Tell threads they can exit now 
 	}
-
+*/
 	/* 
 	 * We can use any other approach to ensure all threads are exited but
 	 * in our case we are sure that no thread can run more than user_args->timeout + 1.

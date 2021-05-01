@@ -7,7 +7,7 @@
 struct arguments
 {
     char host[INET_ADDRSTRLEN];           /* hostname or IP to scan */
-    int timeout;          /* timeout for each port */
+    float timeout;          /* timeout for each port */
     int version;          /* a flag for '-v' to check version */
     char file_to_output[30]; /* output to file */
 };
@@ -42,7 +42,7 @@ error_t parse_opt (int key, char *arg, struct argp_state *state)
             break;
         case 't':
             //printf("%s", arg);
-            arguments->timeout = atoi(arg);
+            arguments->timeout = atof(arg);
             break;
         case 'o':
             strncpy(arguments->file_to_output, arg, 30);
